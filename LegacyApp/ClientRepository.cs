@@ -1,10 +1,17 @@
-﻿using System.Configuration;
+﻿#nullable enable
+using System;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 
 namespace LegacyApp
 {
-    public class ClientRepository
+	public interface IClientRepository {
+		Client GetById(int id);
+	}
+
+	public class ClientRepository : IClientRepository
     {
         public Client GetById(int id)
         {
@@ -25,12 +32,16 @@ namespace LegacyApp
 
                 connection.Open();
                 var reader = command.ExecuteReader(CommandBehavior.CloseConnection);
-                while (reader.Read())
-                {
-                    client = new Client
+                while (reader.Read()) {
+	                Enum? cat = Enum.GetValues<SpecialClientCategory>().FirstOrDefault(v => v.ToString() == reader["Name"].ToString());
+	                if (cat == null) {
+		                cat = SpecialClientCategory.Unknown;
+	                }
+
+	                client = new Client
                                       {
                                           Id = int.Parse(reader["ClientId"].ToString()),
-                                          Name = reader["Name"].ToString(),
+                                          SpecialClientCategory = (SpecialClientCategory)cat,
                                           ClientStatus = (ClientStatus)int.Parse(reader["ClientStatusId"].ToString())
                                       };
                 }
